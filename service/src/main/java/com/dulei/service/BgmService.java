@@ -7,4 +7,6 @@ import java.util.List;
 public interface BgmService {
 
     public List<Bgm> list();
+
+    public Bgm queryBgmById(String bgmId);
 }
