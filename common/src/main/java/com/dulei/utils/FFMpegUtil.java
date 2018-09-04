@@ -1,9 +1,6 @@
 package com.dulei.utils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,7 +68,7 @@ public class FFMpegUtil {
      * @throws Exception
      */
     // 将视频和音频结合，并指定视频的长度，同时生成结合之后的视频文件
-    // ffmpeg.exe -i tsd.mp4 -i "audio.mp3" -t 7 -y new.avi
+    // ffmpeg.exe -i f:/UploadFileServer/File/user/101/upload/2018/09/01/1535816288685741.wmv -i f:/UploadFileServer/File/bgm/eluosi.mp3 -t 10 -y f:/UploadFileServer/File/user/101/videos/2018/09/01/1535816288685741.mp4
     public static void convetor(String videoInputPath, String audioInputPath, String videoOutPath, double time)
             throws Exception {
 
@@ -172,5 +169,18 @@ public class FFMpegUtil {
 //       e.printStackTrace();
 //    }
 // }
+
+/*    public static void main(String[] args) {
+        String coverOutputPath = "G:/videos-resources/180525DFH9X09GR4/video/2018052920014289695.jpg";
+        int start = coverOutputPath.lastIndexOf("/");
+        int end = coverOutputPath.lastIndexOf(".");
+        System.out.println(coverOutputPath.substring(start));
+        if (start != -1 && end != -1) {
+            System.out.println(coverOutputPath.substring(start + 1, end));
+        } else {
+            System.out.println("NO");
+        }
+
+    }*/
 
 }

@@ -1,22 +1,24 @@
 package com.dulei.controller;
 
 import com.dulei.pojo.Bgm;
+import com.dulei.pojo.Videos;
 import com.dulei.service.BgmService;
-import com.dulei.utils.FFMpegUtil;
-import com.dulei.utils.FtpUtil;
-import com.dulei.utils.IDUtils;
-import com.dulei.utils.IMoocJSONResult;
+import com.dulei.service.VideoService;
+import com.dulei.utils.*;
+import com.dulei.utils.enums.VideoStatusEnum;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.Date;
 
 
 @RestController
@@ -34,14 +36,56 @@ public class VideoController {
     private String FTP_PASSWORD;
     @Value("${FTP_USER_PATH}")
     private String FTP_USER_PATH;
+    @Value("${FTP_BGM_PATH}")
+    private String FTP_BGM_PATH;
     @Value("${UPLOADFILES_ROOT_PATH}")
     private String UPLOADFILES_ROOT_PATH;
-    @Value("${UPLOADFILES_EXT}")
-    private String UPLOADFILES_EXT;
+    @Value("${CLIPVIDEOFILES_EXT}")
+    private String CLIPVIDEOFILES_EXT;
+    @Value("${CLIPCOVERFILES_EXT}")
+    private String CLIPCOVERFILES_EXT;
+
+    @Value("${PAGE_SIZE}")
+    private Integer PAGE_SIZE;
 
     @Autowired
     private BgmService bgmService;
+    @Autowired
+    private VideoService videoService;
 
+
+    /**
+     *
+     * @Description: 分页和搜索查询视频列表
+     * isSaveRecord：1 - 需要保存
+     * 				 0 - 不需要保存 ，或者为空的时候
+     *
+     */
+    @ApiOperation(value = "按用户查询视频",notes = "查询视频的接口")
+    //@ApiImplicitParam(name="userId", value="用户id", required=false, dataType="String", paramType="form")
+    @PostMapping("/showAll")
+    public IMoocJSONResult showAll(@RequestBody Videos video, Integer isSaveRecord,
+                                         Integer page, Integer pageSize){
+
+        if (page == null) {
+            page = 1;
+        }
+
+        if (pageSize == null) {
+            pageSize = PAGE_SIZE;
+        }
+
+        PagedResult result = videoService.getAllVideos(video, isSaveRecord, page, pageSize);
+        return IMoocJSONResult.ok(result);
+    }
+
+    /**
+     *
+     * @Description: 上传视频
+     * ftpUtil：单独服务器上传
+     * ffmpeg: 上传服务器剪辑视频
+     *
+     */
     @ApiOperation(value = "上传视频",notes = "上传视频的接口")
     @ApiImplicitParams({
             @ApiImplicitParam(name="userId", value="用户id", required=true,
@@ -66,29 +110,38 @@ public class VideoController {
         if (StringUtils.isBlank(userId)){
             return IMoocJSONResult.errorMsg("用户id不能为空...");
         }
-        String fileName = "";
-        String newFileName = IDUtils.genName();
 
-        //取文件扩展名
-        //String ext = fileName.substring(fileName.lastIndexOf("."));
-        //生成新文件路径
-        //可以是时间+随机数生成文件名
-        String filePath = IDUtils.genPath();
+        //根据时间+随机数生成文件名
+        String newFileNameDB = IDUtils.genName();
+        //源文件扩展名
+        String ext = "";
+        //根据时间YYYY/MM/DD生成新文件路径（数据库保存路径）
+        String newFilePathDB = IDUtils.genPath();
 
-        //把图片上传到ftp服务器（文件服务器）
-        //需要把ftp的参数配置到配置文件中
-        //文件在服务器的存放路径，应该使用日期分隔的目录结构
-        String finalVideoPath = userId + "/upload/" + filePath;
-        String finalVideoAudioPath = userId + "/Transformation/" + filePath;
         if (file != null){
-            fileName = file.getOriginalFilename();
+            //取源文件名
+            String fileName = file.getOriginalFilename();
+            //取文件扩展名
+            ext = fileName.substring(fileName.lastIndexOf("."));
+            //文件上传后编辑前，在服务器的存放路径
+            String file_Upload_Path = userId + "/upload/" + newFilePathDB;
+
+            /*System.out.println(FTP_ADDRESS);
+            System.out.println(FTP_PORT);
+            System.out.println(FTP_USERNAME);
+            System.out.println(FTP_PASSWORD);
+            System.out.println(FTP_USER_PATH);
+            System.out.println(file_Upload_Path);
+            System.out.println(newFileNameDB + ext);*/
+
             try {
+                //把图片上传到ftp服务器（文件服务器）
+                //需要把ftp的参数配置到配置文件中
                 boolean upFileX = FtpUtil.uploadFile(FTP_ADDRESS, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, FTP_USER_PATH,
-                        finalVideoPath, fileName, file.getInputStream());
+                        file_Upload_Path, newFileNameDB + ext, file.getInputStream());
                 if (!upFileX){
                     return IMoocJSONResult.errorMsg("文件上传中出错...");
                 }
-                //return upFileX ? IMoocJSONResult.ok() : IMoocJSONResult.errorMsg("文件上传中出错...");
             } catch (IOException e) {
                 e.printStackTrace();
                 return IMoocJSONResult.errorMsg("文件上传出错啦...");
@@ -98,25 +151,80 @@ public class VideoController {
             return IMoocJSONResult.errorMsg("文件不存在...");
         }
 
-        String videoInputPath = UPLOADFILES_ROOT_PATH + finalVideoPath + "/" + fileName;
-        String videoOutputPath = UPLOADFILES_ROOT_PATH + finalVideoAudioPath + "/" + newFileName + UPLOADFILES_EXT;
+        //视频保存到数据库的路径(时间-文件名)
+        String videoPathDB = newFilePathDB + "/" + newFileNameDB + CLIPVIDEOFILES_EXT;
+        //视频截图保存到数据库的路径(时间-文件名)
+        String coverPathDB = newFilePathDB + "/" + newFileNameDB + CLIPCOVERFILES_EXT;
 
-        if (StringUtils.isBlank(bgmId)){
+        //FFmpeg剪辑视频的输入端路径(根目录-文件上传路径-用户ID-upload)
+        String ffmpegInputPath = UPLOADFILES_ROOT_PATH + FTP_USER_PATH + "/" + userId + "/upload/";
+        //FFmpeg剪辑视频的输出端路径(根目录-文件上传路径-用户ID-videos)
+        String ffmpegOutputPath = UPLOADFILES_ROOT_PATH + FTP_USER_PATH + "/" + userId + "/videos/";
 
-        }
+        //FFmpeg剪辑的输入端视频文件(输入端路径-文件上传路径-新文件名-源文件扩展名)
+        String videoInputFile = ffmpegInputPath + newFilePathDB + "/" + newFileNameDB + ext;
+        //FFmpeg剪辑的输出端视频文件(输出端路径-保存到数据库的路径)
+        String videoOutPutFile = ffmpegOutputPath + videoPathDB;
+        //FFmpeg剪辑的输出端视频文件的截图文件(输出端路径-保存到数据库的路径)
+        String coverOutPutFile = ffmpegOutputPath + coverPathDB;
 
-        if (!StringUtils.isBlank(bgmId)){
-            Bgm bgmResult = bgmService.queryBgmById(bgmId);
-            String audioInputPath = UPLOADFILES_ROOT_PATH + bgmResult.getPath();
+        //视频截取时间
+        String time_coverimg = "00:00:01";
+        //视频截取几帧(大于1多帧:GIF)
+        int frame = 1;
 
-            try {
-                FFMpegUtil.convetor(videoInputPath, audioInputPath, videoOutputPath, videoSeconds);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return IMoocJSONResult.errorMsg("文件合成转换出错...");
+        //FFmpeg剪辑视频的输出端路径
+        //如果路径不存在，新建
+        String filePathMk = ffmpegOutputPath + newFilePathDB;
+        File newFlie = new File(filePathMk);
+        if(!newFlie.exists() && !newFlie.isDirectory()) {
+            boolean mkdirs = newFlie.mkdirs();
+            System.out.println("创建目录啦。。。");
+            if (!mkdirs){
+                return IMoocJSONResult.errorMsg("创建剪辑后文件目录失败...");
             }
         }
 
-        return IMoocJSONResult.ok("250");
+        //视频剪辑
+        try {
+            //有音乐合成视频音频  否则直接转换
+            if (StringUtils.isNotBlank(bgmId)){
+                Bgm bgmResult = bgmService.queryBgmById(bgmId);
+                String audioInputFile = UPLOADFILES_ROOT_PATH + FTP_BGM_PATH + bgmResult.getPath();
+                FFMpegUtil.convetor(videoInputFile, audioInputFile, videoOutPutFile, videoSeconds);
+            } else {
+                FFMpegUtil.convetor(videoInputFile, videoOutPutFile);
+            }
+            // 对视频进行截图
+            FFMpegUtil.convetor(time_coverimg,videoOutPutFile,frame,coverOutPutFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return IMoocJSONResult.errorMsg("FFMPEG剪辑文件失败");
+        }
+
+        /*System.out.println(videoInputFile);
+        System.out.println(audioInputPath);
+        System.out.println(videoOutPutFile);
+        System.out.println(videoSeconds);*/
+
+        // 保存视频信息到数据库
+        Videos video = new Videos();
+        video.setAudioId(bgmId);
+        video.setUserId(userId);
+        video.setVideoSeconds((float) videoSeconds);
+        video.setVideoHeight(videoHeight);
+        video.setVideoWidth(videoWidth);
+        video.setVideoDesc(desc);
+        video.setVideoPath(videoPathDB);
+        video.setCoverPath(coverPathDB);
+        video.setStatus(VideoStatusEnum.SUCCESS.value);
+        video.setCreateTime(new Date());
+        video.setLikeCounts((long) 0);
+        String videoId = videoService.saveVideo(video);
+
+        return IMoocJSONResult.ok(videoId);
+
     }
+
+
 }
