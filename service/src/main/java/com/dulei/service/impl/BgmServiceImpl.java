@@ -5,6 +5,8 @@ import com.dulei.pojo.Bgm;
 import com.dulei.service.BgmService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,6 +21,7 @@ public class BgmServiceImpl implements BgmService {
         return bgmMapper.selectAll();
     }
 
+    @Transactional(propagation = Propagation.SUPPORTS)
     @Override
     public Bgm queryBgmById(String bgmId) {
         return bgmMapper.selectByPrimaryKey(bgmId);

@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 
@@ -62,7 +61,11 @@ public class VideoController {
      *
      */
     @ApiOperation(value = "按用户查询视频",notes = "查询视频的接口")
-    //@ApiImplicitParam(name="userId", value="用户id", required=false, dataType="String", paramType="form")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "isSaveRecord",value = "是否保存热搜",required = false,dataType = "Long",paramType = "query"),
+            @ApiImplicitParam(name = "page",value = "当前页码", defaultValue = "1",required = false,dataType = "Long",paramType = "query"),
+            @ApiImplicitParam(name = "pageSize",value = "每页显示条数",defaultValue = "9",required = false,dataType = "Long",paramType = "query")
+    })
     @PostMapping("/showAll")
     public IMoocJSONResult showAll(@RequestBody Videos video, Integer isSaveRecord,
                                          Integer page, Integer pageSize){
@@ -78,6 +81,17 @@ public class VideoController {
         PagedResult result = videoService.getAllVideos(video, isSaveRecord, page, pageSize);
         return IMoocJSONResult.ok(result);
     }
+
+    /**
+     * 查询热搜词
+     * @return
+     */
+    @ApiOperation(value = "查询热搜词",notes = "查询热搜词的接口")
+    @PostMapping("/hot")
+    public IMoocJSONResult hot(){
+        return IMoocJSONResult.ok(videoService.getHots());
+    }
+
 
     /**
      *
@@ -174,16 +188,21 @@ public class VideoController {
         int frame = 1;
 
         //FFmpeg剪辑视频的输出端路径
-        //如果路径不存在，新建
         String filePathMk = ffmpegOutputPath + newFilePathDB;
-        File newFlie = new File(filePathMk);
+
+        //如果路径不存在，新建
+        if (!FileBooleanUtil.mkdirs(filePathMk)) {
+            return IMoocJSONResult.errorMsg("服务器忙");//创建失败前台显示
+        }
+
+        /*File newFlie = new File(filePathMk);
         if(!newFlie.exists() && !newFlie.isDirectory()) {
             boolean mkdirs = newFlie.mkdirs();
             System.out.println("创建目录啦。。。");
             if (!mkdirs){
                 return IMoocJSONResult.errorMsg("创建剪辑后文件目录失败...");
             }
-        }
+        }*/
 
         //视频剪辑
         try {
@@ -199,7 +218,14 @@ public class VideoController {
             FFMpegUtil.convetor(time_coverimg,videoOutPutFile,frame,coverOutPutFile);
         } catch (Exception e) {
             e.printStackTrace();
-            return IMoocJSONResult.errorMsg("FFMPEG剪辑文件失败");
+            return IMoocJSONResult.errorMsg("服务器忙");//FFMPEG转换失败
+        }
+
+        //判断最后的截图文件是否存在，不存在表示失败，删除上传文件和转换后的文件
+        if (!FileBooleanUtil.fileIsExists(coverOutPutFile)){
+            FileBooleanUtil.delete(videoOutPutFile);
+            FileBooleanUtil.delete(videoInputFile);
+            return IMoocJSONResult.errorMsg("文件格式错误");//FFMPEG转换失败
         }
 
         /*System.out.println(videoInputFile);
