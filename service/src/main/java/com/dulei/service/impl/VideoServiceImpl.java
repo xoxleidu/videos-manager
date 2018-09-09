@@ -10,13 +10,11 @@ import com.dulei.service.VideoService;
 import com.dulei.utils.PagedResult;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import org.apache.commons.lang3.StringUtils;
 import org.n3r.idworker.Sid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import tk.mybatis.mapper.entity.Example;
 
 import java.util.List;
 
@@ -43,12 +41,44 @@ public class VideoServiceImpl implements VideoService {
 
     @Transactional(propagation = Propagation.REQUIRED)
     @Override
+    public PagedResult getLikesVideosByDay(Integer page, Integer dayBy) {
+
+        PageHelper.startPage(page,1);
+        List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideosByLikes(dayBy);
+
+        PageInfo pageInfoList = new PageInfo(videosVOList);
+        PagedResult pagedResult = new PagedResult();
+        pagedResult.setPage(page);
+        pagedResult.setRecords(pageInfoList.getTotal());
+        pagedResult.setRows(videosVOList);
+        pagedResult.setTotal(pageInfoList.getPages());
+
+        return pagedResult;
+
+        /*for (VideosVO v:videosVOList){
+            System.out.println(JsonUtils.objectToJson(v));
+        }*/
+
+        /*//过去七天
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Calendar c = Calendar.getInstance();
+
+        c.setTime(new Date());
+        c.add(Calendar.DATE, - 7);
+        Date d = c.getTime();
+        String day = format.format(d);
+        System.out.println("过去七天："+ day);*/
+
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    @Override
     public PagedResult getAllVideos(Videos video, Integer isSaveRecord, Integer page, Integer pageSize) {
 
         String desc = video.getVideoDesc();
         String userId = video.getUserId();
 
-        System.out.println(desc + userId);
+        //System.out.println(desc + userId);
 
         // 保存热搜词
         if (isSaveRecord != null && isSaveRecord == 1) {
@@ -63,7 +93,6 @@ public class VideoServiceImpl implements VideoService {
         List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideos(desc,userId);
 
         PageInfo pageInfoList = new PageInfo(videosVOList);
-
         PagedResult pagedResult = new PagedResult();
         pagedResult.setPage(page);
         pagedResult.setRecords(pageInfoList.getTotal());
@@ -80,9 +109,7 @@ public class VideoServiceImpl implements VideoService {
 
     @Transactional(propagation = Propagation.SUPPORTS)
     @Override
-    public List<String> getHots() {
-        return searchRecordsMapper.getHots();
-    }
+    public List<String> getHots() {return searchRecordsMapper.getHots();}
 
 
 }

@@ -74,6 +74,11 @@ public class VideoController {
             page = 1;
         }
 
+        if (video.getUserId() == null && video.getVideoDesc() == null && isSaveRecord == null && pageSize == null){
+            PagedResult likesVideosByDay = videoService.getLikesVideosByDay(page, 6);
+            return IMoocJSONResult.ok(likesVideosByDay);
+        }
+
         if (pageSize == null) {
             pageSize = PAGE_SIZE;
         }

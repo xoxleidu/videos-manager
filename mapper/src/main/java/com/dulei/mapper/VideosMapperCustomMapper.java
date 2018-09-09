@@ -15,4 +15,6 @@ public interface VideosMapperCustomMapper extends MyMapper<Videos> {
     public List<VideosVO> queryAllVideos(@Param("videoDesc") String videoDesc,
                                          @Param("userId") String userId);
 
+    public List<VideosVO> queryAllVideosByLikes(@Param("dayBy") int dayBy);
+
 }

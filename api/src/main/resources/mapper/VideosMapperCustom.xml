@@ -36,4 +36,13 @@
 
   </select>
 
+  <select id="queryAllVideosByLikes" resultMap="BaseResultMap" parameterType="INTEGER">
+    select v.*,u.face_image as face_image,u.nickname as nickname from videos v
+    left join users u on u.id = v.user_id
+    where
+    v.status = 1
+    and TO_DAYS(NOW()) - TO_DAYS(v.create_time) &lt;= #{dayBy}
+    order by v.like_counts desc
+  </select>
+
 </mapper>
