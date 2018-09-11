@@ -1,9 +1,8 @@
 package com.dulei.service.impl;
 
-import com.dulei.mapper.SearchRecordsMapper;
-import com.dulei.mapper.VideosMapper;
-import com.dulei.mapper.VideosMapperCustomMapper;
+import com.dulei.mapper.*;
 import com.dulei.pojo.SearchRecords;
+import com.dulei.pojo.UsersLikeVideos;
 import com.dulei.pojo.Videos;
 import com.dulei.pojo.redis.VideosVO;
 import com.dulei.service.VideoService;
@@ -15,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import tk.mybatis.mapper.entity.Example;
 
 import java.util.List;
 
@@ -27,6 +27,10 @@ public class VideoServiceImpl implements VideoService {
     private VideosMapperCustomMapper videosMapperCustomMapper;
     @Autowired
     private SearchRecordsMapper searchRecordsMapper;
+    @Autowired
+    private UsersMapper usersMapper;
+    @Autowired
+    private UsersLikeVideosMapper usersLikeVideosMapper;
     @Autowired
     private Sid sid;
 
@@ -43,7 +47,7 @@ public class VideoServiceImpl implements VideoService {
     @Override
     public PagedResult getLikesVideosByDay(Integer page, Integer dayBy) {
 
-        PageHelper.startPage(page,1);
+        PageHelper.startPage(page,10);
         List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideosByLikes(dayBy);
 
         PageInfo pageInfoList = new PageInfo(videosVOList);
@@ -110,6 +114,36 @@ public class VideoServiceImpl implements VideoService {
     @Transactional(propagation = Propagation.SUPPORTS)
     @Override
     public List<String> getHots() {return searchRecordsMapper.getHots();}
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    @Override
+    public void userLikeVideo(String userId, String videoId, String videoCreateId) {
+        String id = sid.nextShort();
+        UsersLikeVideos ulv = new UsersLikeVideos();
+        ulv.setId(id);
+        ulv.setUserId(userId);
+        ulv.setVideoId(videoId);
+
+        // 1. 保存用户和视频的喜欢点赞关联关系表
+        usersLikeVideosMapper.insert(ulv);
+        // 2. 视频喜欢数量累加
+        videosMapperCustomMapper.addLikeCounts(videoId);
+        // 3. 用户受喜欢数量的累加
+        usersMapper.addReceiveLikeCounts(videoCreateId);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    @Override
+    public void userUnLikeVideo(String userId, String videoId, String videoCreateId) {
+        Example example = new Example(UsersLikeVideos.class);
+        Example.Criteria criteria = example.createCriteria();
+        criteria.andEqualTo("userId",userId);
+        criteria.andEqualTo("videoId",videoId);
+
+        usersLikeVideosMapper.deleteByExample(example);
+        videosMapperCustomMapper.delLikeCounts(videoId);
+        usersMapper.delReceiveLikeCounts(videoCreateId);
+    }
 
 
 }

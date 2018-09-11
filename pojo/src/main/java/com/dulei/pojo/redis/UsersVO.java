@@ -7,9 +7,7 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.persistence.Column;
 import javax.persistence.Id;
 
-@ApiModel(value="用户对象", description="这是用户对象")
 public class UsersVO {
-
 
     private String id;
     private String userToken;

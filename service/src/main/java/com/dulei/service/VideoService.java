@@ -32,12 +32,30 @@ public interface VideoService {
      * @param pageSize 每页条数
      * @return page list
      */
-    PagedResult getAllVideos(Videos video, Integer isSaveRecord, Integer page, Integer pageSize);
+    public PagedResult getAllVideos(Videos video, Integer isSaveRecord, Integer page, Integer pageSize);
 
     /**
      * 查询热搜词
      * @return string list
      */
-    List<String> getHots();
+    public List<String> getHots();
+
+    /**
+     * 喜欢、点赞视频
+     * @param userId 用户ID
+     * @param videoId 视频ID
+     * @param videoCreateId 发布视频用户ID
+     */
+    public void userLikeVideo(String userId, String videoId, String videoCreateId);
+
+    /**
+     * 取消喜欢、取消点赞视频
+     * @param userId 用户ID
+     * @param videoId 视频ID
+     * @param videoCreateId 发布视频用户ID
+     */
+    public void userUnLikeVideo(String userId, String videoId, String videoCreateId);
+
+
 
 }

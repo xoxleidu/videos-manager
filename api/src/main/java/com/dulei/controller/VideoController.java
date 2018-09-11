@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.Date;
 
 
@@ -97,6 +98,42 @@ public class VideoController {
         return IMoocJSONResult.ok(videoService.getHots());
     }
 
+    /**
+     * 点赞
+     * @return
+     */
+    @ApiOperation(value = "点赞",notes = "用户点赞接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId",value = "用户ID",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "videoId",value = "视频ID",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "videoCreateId",value = "视频发布者ID",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "headerUserId", value = "验证登录", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "headerUserToken", value = "验证登录超时", required = true, dataType = "String", paramType = "header")
+    })
+    @PostMapping("/likeVideo")
+    public IMoocJSONResult likeVideo(String userId, String videoId, String videoCreateId) {
+        videoService.userLikeVideo(userId,videoId,videoCreateId);
+        return IMoocJSONResult.ok();
+    }
+
+    /**
+     * 取消点赞
+     * @return
+     */
+    @ApiOperation(value = "取消点赞",notes = "取消用户点赞接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId",value = "用户ID",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "videoId",value = "视频ID",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "videoCreateId",value = "视频发布者ID",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "headerUserId", value = "验证登录", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "headerUserToken", value = "验证登录超时", required = true, dataType = "String", paramType = "header")
+    })
+    @PostMapping("/unLikeVideo")
+    public IMoocJSONResult unLikeVideo(String userId, String videoId, String videoCreateId) {
+        videoService.userUnLikeVideo(userId,videoId,videoCreateId);
+        return IMoocJSONResult.ok();
+    }
+
 
     /**
      *
@@ -107,18 +144,14 @@ public class VideoController {
      */
     @ApiOperation(value = "上传视频",notes = "上传视频的接口")
     @ApiImplicitParams({
-            @ApiImplicitParam(name="userId", value="用户id", required=true,
-                    dataType="String", paramType="form"),
-            @ApiImplicitParam(name="bgmId", value="背景音乐id", required=false,
-                    dataType="String", paramType="form"),
-            @ApiImplicitParam(name="videoSeconds", value="背景音乐播放长度", required=true,
-                    dataType="String", paramType="form"),
-            @ApiImplicitParam(name="videoWidth", value="视频宽度", required=true,
-                    dataType="String", paramType="form"),
-            @ApiImplicitParam(name="videoHeight", value="视频高度", required=true,
-                    dataType="String", paramType="form"),
-            @ApiImplicitParam(name="desc", value="视频描述", required=false,
-                    dataType="String", paramType="form")
+            @ApiImplicitParam(name="userId", value="用户id", required=true, dataType="String", paramType="form"),
+            @ApiImplicitParam(name="bgmId", value="背景音乐id", required=false, dataType="String", paramType="form"),
+            @ApiImplicitParam(name="videoSeconds", value="背景音乐播放长度", required=true, dataType="String", paramType="form"),
+            @ApiImplicitParam(name="videoWidth", value="视频宽度", required=true, dataType="String", paramType="form"),
+            @ApiImplicitParam(name="videoHeight", value="视频高度", required=true, dataType="String", paramType="form"),
+            @ApiImplicitParam(name="desc", value="视频描述", required=false, dataType="String", paramType="form"),
+            @ApiImplicitParam(name = "headerUserId", value = "验证登录", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "headerUserToken", value = "验证登录超时", required = true, dataType = "String", paramType = "header")
     })
     @PostMapping("/upload")
     public IMoocJSONResult upload(String userId, String bgmId, String desc,
@@ -161,7 +194,7 @@ public class VideoController {
                 if (!upFileX){
                     return IMoocJSONResult.errorMsg("文件上传中出错...");
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 return IMoocJSONResult.errorMsg("文件上传出错啦...");
             }

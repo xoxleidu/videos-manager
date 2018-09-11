@@ -1,6 +1,7 @@
 package com.dulei.controller;
 
 import com.dulei.pojo.Users;
+import com.dulei.pojo.redis.UsersLikeVideo;
 import com.dulei.pojo.redis.UsersVO;
 import com.dulei.service.UserService;
 import com.dulei.utils.FtpUtil;
@@ -37,7 +38,11 @@ public class UserController {
 
     @PostMapping("/uploadface")
     @ApiOperation(value="用户上传头像", notes="用户上传头像的接口")
-    @ApiImplicitParam(name="userId", value="用户id", required=true, dataType="String", paramType="form")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name="userId", value="用户id", required=true, dataType="String", paramType="form"),
+            @ApiImplicitParam(name = "headerUserId", value = "验证登录", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "headerUserToken", value = "验证登录超时", required = true, dataType = "String", paramType = "header")
+    })
     public IMoocJSONResult uploadFace(String userId, @ApiParam(value = "短视频",required = true) MultipartFile file) {
 
         if (StringUtils.isBlank(userId)){
@@ -89,24 +94,56 @@ public class UserController {
 
     @ApiOperation(value="查询用户信息", notes="查询用户信息的接口")
     @ApiImplicitParams({
-            @ApiImplicitParam(name="userId", value="用户id", required=true,
-                    dataType="String", paramType="query"),
-            @ApiImplicitParam(name="fanId", value="查询用户是否关注", required=false,
-                    dataType="String", paramType="query")
+            @ApiImplicitParam(name="userId", value="用户id", required=true, dataType="String", paramType="query"),
+            @ApiImplicitParam(name="fanId", value="查询用户是否关注", required=false, dataType="String", paramType="query"),
+            @ApiImplicitParam(name = "headerUserId", value = "验证登录", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "headerUserToken", value = "验证登录超时", required = true, dataType = "String", paramType = "header")
     })
     @PostMapping("/query")
-    public IMoocJSONResult query(String userId, String fanId){
+    public IMoocJSONResult query(String userId, String fanId, String headerUserId, String headerUserToken){
 
         if (StringUtils.isBlank(userId)) {
-            return IMoocJSONResult.errorMsg("用户id不能为空...");
+            return IMoocJSONResult.errorMsg("用户id不能空...");
         }
+
         Users userInfo = userService.queryUserInfo(userId);
 
+        if (userInfo != null){
+            UsersVO usersVO = new UsersVO();
+            BeanUtils.copyProperties(userInfo,usersVO);
+            usersVO.setFollow(userService.queryIfFollow(userId,fanId));
+            return IMoocJSONResult.ok(usersVO);
+        }
+
+        return IMoocJSONResult.errorMsg("用户不存在...");
+    }
+
+    @ApiOperation(value="查询用户与视频关系", notes="用户与视频关系接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name="userId", value="当前用户id", required=false, dataType="String", paramType="query"),
+            @ApiImplicitParam(name="videoId", value="当前视频id", required=true, dataType="String", paramType="query"),
+            @ApiImplicitParam(name="videoCreateId", value="视频作者id", required=true, dataType="String", paramType="query")
+    })
+    @PostMapping("/queryIsLike")
+    public IMoocJSONResult queryIsLike(String userId, String videoId, String videoCreateId){
+
+        if (StringUtils.isBlank(videoCreateId)) {
+            return IMoocJSONResult.errorMsg("");
+        }
+        Users userInfo = userService.queryUserInfo(videoCreateId);
+
+        if (userInfo == null) {
+            return IMoocJSONResult.errorMsg("用户不存在...");
+        }
         UsersVO usersVO = new UsersVO();
         BeanUtils.copyProperties(userInfo,usersVO);
 
-        usersVO.setFollow(userService.queryIfFollow(userId,fanId));
+        boolean bool = userService.queryIfLike(userId, videoId);
 
-        return IMoocJSONResult.ok(usersVO);
+        UsersLikeVideo ulvResult = new UsersLikeVideo();
+        ulvResult.setUsersVOResult(usersVO);
+        ulvResult.setUserIsLikeVideo(bool);
+
+        return IMoocJSONResult.ok(ulvResult);
     }
 }

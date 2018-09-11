@@ -3,6 +3,8 @@ package com.dulei.controller;
 import com.dulei.service.BgmService;
 import com.dulei.utils.IMoocJSONResult;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +22,10 @@ public class BgmController {
 
     @PostMapping("/list")
     @ApiOperation(value="所有背景音乐的列表", notes="背景音乐LIST")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "headerUserId", value = "验证登录", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "headerUserToken", value = "验证登录超时", required = true, dataType = "String", paramType = "header")
+    })
     public IMoocJSONResult list(){
 
         return IMoocJSONResult.ok(bgmService.list());

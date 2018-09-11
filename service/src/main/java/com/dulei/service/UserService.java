@@ -33,4 +33,9 @@ public interface UserService {
      * @Description: 查询用户是否关注
      */
     public boolean queryIfFollow(String userId, String fanId);
+
+    /**
+     * @Description: 查询用户是否点赞视频
+     */
+    public boolean queryIfLike(String userId, String videoId);
 }
