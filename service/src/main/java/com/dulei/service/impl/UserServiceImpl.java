@@ -92,6 +92,7 @@ public class UserServiceImpl implements UserService {
         return false;
     }
 
+	@Transactional(propagation = Propagation.SUPPORTS)
     @Override
     public boolean queryIfLike(String userId, String videoId) {
         if (StringUtils.isBlank(userId) || StringUtils.isBlank(videoId)){
@@ -104,10 +105,37 @@ public class UserServiceImpl implements UserService {
         criteria.andEqualTo("videoId",videoId);
         List<UsersLikeVideos> list = usersLikeVideosMapper.selectByExample(example);
 
-        if (list != null && list.size() > 0){
+        if (list != null && !list.isEmpty() && list.size() > 0){
             return true;
         }
 
         return false;
     }
+
+	@Transactional(propagation = Propagation.REQUIRED)
+	@Override
+	public void saveUserFans(String userId, String fanId) {
+		String id = sid.nextShort();
+		UsersFans uf = new UsersFans();
+		uf.setId(id);
+		uf.setUserId(userId);
+		uf.setFanId(fanId);
+		usersFansMapper.insert(uf);
+		usersMapper.addUserFansCounts(userId);
+		usersMapper.addUserFollowCounts(fanId);
+	}
+	
+	@Transactional(propagation = Propagation.REQUIRED)
+	@Override
+	public void cleanUserFans(String userId, String fanId){
+		Example example = new Example(UsersFans.class);
+		Example.Criteria criteria = example.createCriteria();
+		criteria.andEqualTo("userId",userId);
+		criteria.andEqualTo("fanId",fanId);
+		usersFansMapper.deleteByExample(example);
+		usersMapper.delUserFansCounts(userId);
+		usersMapper.delUserFollowCounts(fanId);
+	}
+	
+
 }

@@ -22,17 +22,21 @@ public interface VideoService {
      * @return page list
      *
      */
-    public PagedResult getLikesVideosByDay(Integer page, Integer dayBy);
+    //  public PagedResult getLikesVideosByDay(Integer page, Integer dayBy);
 
     /**
      * 分页获取视频列表
-     * @param video 可根据USERID或VIDEODESC查询，都不写查所有
+     * @param video 所有视频or我发的视频(userId判断)or模糊查询所有视频(videoDesc判断)
      * @param isSaveRecord 是否保存热搜词
      * @param page 当前页
      * @param pageSize 每页条数
      * @return page list
      */
     public PagedResult getAllVideos(Videos video, Integer isSaveRecord, Integer page, Integer pageSize);
+
+    public PagedResult getAllVideosByFollows(String userId, Integer page, Integer pageSize);
+
+    public PagedResult getAllVideosByLikes(String userId, Integer page, Integer pageSize);
 
     /**
      * 查询热搜词

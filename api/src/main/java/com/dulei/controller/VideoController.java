@@ -57,6 +57,7 @@ public class VideoController {
     /**
      *
      * @Description: 分页和搜索查询视频列表
+     *               所有视频or我发的视频(userId判断)or模糊查询所有视频(videoDesc判断)
      * isSaveRecord：1 - 需要保存
      * 				 0 - 不需要保存 ，或者为空的时候
      *
@@ -75,16 +76,76 @@ public class VideoController {
             page = 1;
         }
 
-        if (video.getUserId() == null && video.getVideoDesc() == null && isSaveRecord == null && pageSize == null){
+        /*if (video.getUserId() == null && video.getVideoDesc() == null && isSaveRecord == null && pageSize == null){
             PagedResult likesVideosByDay = videoService.getLikesVideosByDay(page, 6);
             return IMoocJSONResult.ok(likesVideosByDay);
-        }
+        }*/
 
         if (pageSize == null) {
             pageSize = PAGE_SIZE;
         }
 
         PagedResult result = videoService.getAllVideos(video, isSaveRecord, page, pageSize);
+        return IMoocJSONResult.ok(result);
+    }
+
+    /**
+     *
+     * @Description: 分页和搜索查询我关注的人发的视频
+     *
+     */
+    @ApiOperation(value = "我关注的人发的视频",notes = "查询视频的接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId",value = "用户Id",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "page",value = "当前页码", defaultValue = "1",required = false,dataType = "Long",paramType = "query"),
+            @ApiImplicitParam(name = "pageSize",value = "每页显示条数",defaultValue = "9",required = false,dataType = "Long",paramType = "query")
+    })
+    @PostMapping("/showFollow")
+    public IMoocJSONResult showFollow(String userId, Integer page, Integer pageSize){
+
+        if (StringUtils.isBlank(userId)) {
+            return IMoocJSONResult.ok();
+        }
+
+        if (page == null) {
+            page = 1;
+        }
+
+        if (pageSize == null) {
+            pageSize = PAGE_SIZE;
+        }
+
+        PagedResult result = videoService.getAllVideosByFollows(userId, page, pageSize);
+        return IMoocJSONResult.ok(result);
+    }
+
+    /**
+     *
+     * @Description: 分页和搜索查询我喜欢的视频
+     *
+     */
+    @ApiOperation(value = "我喜欢的视频",notes = "查询视频的接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "userId",value = "用户Id",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "page",value = "当前页码", defaultValue = "1",required = false,dataType = "Long",paramType = "query"),
+            @ApiImplicitParam(name = "pageSize",value = "每页显示条数",defaultValue = "9",required = false,dataType = "Long",paramType = "query")
+    })
+    @PostMapping("/showLike")
+    public IMoocJSONResult showLike(String userId, Integer page, Integer pageSize){
+
+        if (StringUtils.isBlank(userId)) {
+            return IMoocJSONResult.ok();
+        }
+
+        if (page == null) {
+            page = 1;
+        }
+
+        if (pageSize == null) {
+            pageSize = PAGE_SIZE;
+        }
+
+        PagedResult result = videoService.getAllVideosByLikes(userId, page, pageSize);
         return IMoocJSONResult.ok(result);
     }
 

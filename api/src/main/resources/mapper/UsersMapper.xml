@@ -22,4 +22,22 @@
   <update id="delReceiveLikeCounts" parameterType="String">
     update users set receive_like_counts=receive_like_counts-1 where id=#{userId}
   </update>
+
+  <update id="addUserFansCounts" parameterType="String">
+    update users set fans_counts=fans_counts+1 where id=#{userId}
+  </update>
+
+  <update id="delUserFansCounts" parameterType="String">
+    update users set fans_counts=fans_counts-1 where id=#{userId}
+  </update>
+
+  <update id="addUserFollowCounts" parameterType="String">
+    update users set follow_counts=follow_counts+1 where id=#{userId}
+  </update>
+
+  <update id="delUserFollowCounts" parameterType="String">
+    update users set follow_counts=follow_counts-1 where id=#{userId}
+  </update>
+
+
 </mapper>

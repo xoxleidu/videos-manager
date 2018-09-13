@@ -10,12 +10,20 @@ import java.util.List;
 public interface VideosMapperCustomMapper extends MyMapper<Videos> {
 
     /**
-     * @Description: 条件查询所有视频列表
+     * @Description: 查询所有视频or我发的视频(userId判断)or模糊查询所有视频(videoDesc判断)
      */
     public List<VideosVO> queryAllVideos(@Param("videoDesc") String videoDesc,
                                          @Param("userId") String userId);
 
-    public List<VideosVO> queryAllVideosByLikes(@Param("dayBy") int dayBy);
+    /**
+     * @Description: 查询我关注的人发的视频
+     */
+    public List<VideosVO> queryAllVideosByFollows(@Param("userId") String userId);
+
+    /**
+     * @Description: 查询我喜欢的视频
+     */
+    public List<VideosVO> queryAllVideosByLikes(@Param("userId") String userId);
 
     public void addLikeCounts(String videoId);
     public void delLikeCounts(String videoId);

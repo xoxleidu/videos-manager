@@ -38,4 +38,15 @@ public interface UserService {
      * @Description: 查询用户是否点赞视频
      */
     public boolean queryIfLike(String userId, String videoId);
+
+	/**
+     * @Description: 保存用户关注信息
+     */
+	public void saveUserFans(String userId, String fanId);
+
+	/**
+     * @Description: 取消用户关注信息
+     */
+	public void cleanUserFans(String userId, String fanId);
+
 }

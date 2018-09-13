@@ -43,11 +43,11 @@ public class VideoServiceImpl implements VideoService {
         return id;
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    /*@Transactional(propagation = Propagation.REQUIRED)
     @Override
     public PagedResult getLikesVideosByDay(Integer page, Integer dayBy) {
 
-        PageHelper.startPage(page,10);
+        PageHelper.startPage(page,21);
         List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideosByLikes(dayBy);
 
         PageInfo pageInfoList = new PageInfo(videosVOList);
@@ -59,11 +59,12 @@ public class VideoServiceImpl implements VideoService {
 
         return pagedResult;
 
-        /*for (VideosVO v:videosVOList){
+        *//*for (VideosVO v:videosVOList){
             System.out.println(JsonUtils.objectToJson(v));
-        }*/
+        }*//*
 
-        /*//过去七天
+        //过去七天
+        *//*
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Calendar c = Calendar.getInstance();
 
@@ -71,11 +72,11 @@ public class VideoServiceImpl implements VideoService {
         c.add(Calendar.DATE, - 7);
         Date d = c.getTime();
         String day = format.format(d);
-        System.out.println("过去七天："+ day);*/
+        System.out.println("过去七天："+ day);*//*
 
-    }
+    }*/
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional(propagation = Propagation.SUPPORTS)
     @Override
     public PagedResult getAllVideos(Videos video, Integer isSaveRecord, Integer page, Integer pageSize) {
 
@@ -108,6 +109,36 @@ public class VideoServiceImpl implements VideoService {
         System.out.println(pageSize);
         System.out.println(pageInfoList.getPages());*/
 
+        return pagedResult;
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Override
+    public PagedResult getAllVideosByFollows(String userId, Integer page, Integer pageSize) {
+        PageHelper.startPage(page,pageSize);
+        List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideosByFollows(userId);
+
+        PageInfo pageInfoList = new PageInfo(videosVOList);
+        PagedResult pagedResult = new PagedResult();
+        pagedResult.setPage(page);
+        pagedResult.setRecords(pageInfoList.getTotal());
+        pagedResult.setRows(videosVOList);
+        pagedResult.setTotal(pageInfoList.getPages());
+        return pagedResult;
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Override
+    public PagedResult getAllVideosByLikes(String userId, Integer page, Integer pageSize) {
+        PageHelper.startPage(page,pageSize);
+        List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideosByLikes(userId);
+
+        PageInfo pageInfoList = new PageInfo(videosVOList);
+        PagedResult pagedResult = new PagedResult();
+        pagedResult.setPage(page);
+        pagedResult.setRecords(pageInfoList.getTotal());
+        pagedResult.setRows(videosVOList);
+        pagedResult.setTotal(pageInfoList.getPages());
         return pagedResult;
     }
 

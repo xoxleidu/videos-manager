@@ -10,12 +10,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 public class WebMvcConfig extends WebMvcConfigurerAdapter {
 
     @Bean
-    public MiniInterceptor miniIntercepror(){
+    public MiniInterceptor miniInterceptor(){
         return new MiniInterceptor();
     }
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(miniIntercepror())
+        registry.addInterceptor(miniInterceptor())
                 .addPathPatterns("/user/**")
                 .excludePathPatterns("/user/queryIsLike")
                 .addPathPatterns("/bgm/**")
