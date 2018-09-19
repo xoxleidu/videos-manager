@@ -424,7 +424,7 @@ public class VideoController {
 
     }
 
-    @PostMapping("/getCodeImgPath")
+    //@PostMapping("/getCodeImgPath")
     public IMoocJSONResult getCodeImgPath (String accessToken) throws Exception {
 
         System.out.println("token为");
