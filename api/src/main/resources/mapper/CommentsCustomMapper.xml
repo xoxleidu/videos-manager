@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dulei.mapper.CommentsCustomMapper">
+  <resultMap id="BaseResultMap" type="com.dulei.pojo.redis.CommentsVO">
+    <!--
+      WARNING - @mbg.generated
+    -->
+    <id column="id" jdbcType="VARCHAR" property="id" />
+    <result column="father_comment_id" jdbcType="VARCHAR" property="fatherCommentId" />
+    <result column="to_user_id" jdbcType="VARCHAR" property="toUserId" />
+    <result column="video_id" jdbcType="VARCHAR" property="videoId" />
+    <result column="from_user_id" jdbcType="VARCHAR" property="fromUserId" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="comment" jdbcType="LONGVARCHAR" property="comment" />
+  </resultMap>
+
+  <select id="queryVideoComments" resultMap="BaseResultMap" parameterType="String">
+	select c.*,u.face_image as face_image,u.nickname,tu.nickname as toNickname
+	from comments c
+	left join users u on c.from_user_id = u.id
+	left join users tu on c.to_user_id = tu.id
+  	where c.video_id = #{videoId} order by c.create_time desc
+  </select>
+
+</mapper>

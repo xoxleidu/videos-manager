@@ -1,6 +1,8 @@
 package com.dulei.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.dulei.pojo.Bgm;
+import com.dulei.pojo.Comments;
 import com.dulei.pojo.Videos;
 import com.dulei.service.BgmService;
 import com.dulei.service.VideoService;
@@ -8,17 +10,21 @@ import com.dulei.utils.*;
 import com.dulei.utils.enums.VideoStatusEnum;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HTTP;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.net.ConnectException;
+import java.io.*;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @RestController
@@ -45,8 +51,10 @@ public class VideoController {
     @Value("${CLIPCOVERFILES_EXT}")
     private String CLIPCOVERFILES_EXT;
 
-    @Value("${PAGE_SIZE}")
-    private Integer PAGE_SIZE;
+    @Value("${VIDEO_PAGE_SIZE}")
+    private Integer VIDEO_PAGE_SIZE;
+    @Value("${COMMENT_PAGE_SIZE}")
+    private Integer COMMENT_PAGE_SIZE;
 
     @Autowired
     private BgmService bgmService;
@@ -82,7 +90,7 @@ public class VideoController {
         }*/
 
         if (pageSize == null) {
-            pageSize = PAGE_SIZE;
+            pageSize = VIDEO_PAGE_SIZE;
         }
 
         PagedResult result = videoService.getAllVideos(video, isSaveRecord, page, pageSize);
@@ -94,7 +102,7 @@ public class VideoController {
      * @Description: 分页和搜索查询我关注的人发的视频
      *
      */
-    @ApiOperation(value = "我关注的人发的视频",notes = "查询视频的接口")
+    @ApiOperation(value = "我关注的人发的视频",notes = "查询我关注的人发的视频接口")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "userId",value = "用户Id",required = true,dataType = "String",paramType = "query"),
             @ApiImplicitParam(name = "page",value = "当前页码", defaultValue = "1",required = false,dataType = "Long",paramType = "query"),
@@ -112,7 +120,7 @@ public class VideoController {
         }
 
         if (pageSize == null) {
-            pageSize = PAGE_SIZE;
+            pageSize = VIDEO_PAGE_SIZE;
         }
 
         PagedResult result = videoService.getAllVideosByFollows(userId, page, pageSize);
@@ -124,7 +132,7 @@ public class VideoController {
      * @Description: 分页和搜索查询我喜欢的视频
      *
      */
-    @ApiOperation(value = "我喜欢的视频",notes = "查询视频的接口")
+    @ApiOperation(value = "我喜欢的视频",notes = "查询我喜欢视频的接口")
     @ApiImplicitParams({
             @ApiImplicitParam(name = "userId",value = "用户Id",required = true,dataType = "String",paramType = "query"),
             @ApiImplicitParam(name = "page",value = "当前页码", defaultValue = "1",required = false,dataType = "Long",paramType = "query"),
@@ -142,7 +150,7 @@ public class VideoController {
         }
 
         if (pageSize == null) {
-            pageSize = PAGE_SIZE;
+            pageSize = VIDEO_PAGE_SIZE;
         }
 
         PagedResult result = videoService.getAllVideosByLikes(userId, page, pageSize);
@@ -193,6 +201,71 @@ public class VideoController {
     public IMoocJSONResult unLikeVideo(String userId, String videoId, String videoCreateId) {
         videoService.userUnLikeVideo(userId,videoId,videoCreateId);
         return IMoocJSONResult.ok();
+    }
+
+    /**
+     * 保存留言
+     * @param comments 留言实体类 comments.fromUserId 留言者的ID 谁留言就是谁的ID，(当前用户ID)
+     * @param fatherCommentId 针对哪条留言的ID 相当于commentsID
+     * @param toUserId 回复谁的ID 回复谁就是谁的ID
+     * @return
+     */
+    @ApiOperation(value = "保存留言",notes = "保存留言接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "fatherCommentId",value = "针对哪条留言的ID",required = false,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "toUserId",value = "回复谁的ID",required = false,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "headerUserId", value = "验证登录", required = true, dataType = "String", paramType = "header"),
+            @ApiImplicitParam(name = "headerUserToken", value = "验证登录超时", required = true, dataType = "String", paramType = "header")
+    })
+    @PostMapping("/saveComment")
+    public IMoocJSONResult saveComment(@RequestBody Comments comments, String fatherCommentId, String toUserId) {
+        if (StringUtils.isBlank(comments.getComment())){
+            return IMoocJSONResult.errorMsg("留言不能空...");
+        }
+        if (!fatherCommentId.isEmpty() && !toUserId.isEmpty()) {
+            System.out.println("是回复");
+            comments.setFatherCommentId(fatherCommentId);
+            comments.setToUserId(toUserId);
+        }
+        comments.setCreateTime(new Date());
+        videoService.saveComment(comments);
+        return IMoocJSONResult.ok();
+    }
+
+    /**
+     * 获取视频留言
+     * @param videoId 视频ID
+     * @param page
+     * @param pageSize
+     * @return
+     */
+    @ApiOperation(value = "获取视频留言",notes = "获取视频留言接口")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "videoId",value = "视频Id",required = true,dataType = "String",paramType = "query"),
+            @ApiImplicitParam(name = "page",value = "当前页码", defaultValue = "1",required = false,dataType = "Long",paramType = "query"),
+            @ApiImplicitParam(name = "pageSize",value = "每页显示条数",defaultValue = "10",required = false,dataType = "Long",paramType = "query")
+    })
+    @PostMapping("/getVideoComments")
+    public IMoocJSONResult getVideoComments(String videoId, Integer page, Integer pageSize) {
+        if (StringUtils.isBlank(videoId)) {
+            return IMoocJSONResult.ok();
+        }
+
+        if (page == null && pageSize == null) {
+            PagedResult videoAllComments = videoService.getVideoAllComments(videoId);
+            return IMoocJSONResult.ok(videoAllComments);
+        }
+
+        if (page == null) {
+            page = 1;
+        }
+
+        if (pageSize == null) {
+            pageSize = COMMENT_PAGE_SIZE;
+        }
+
+        PagedResult videoComments = videoService.getVideoComments(videoId, page, pageSize);
+        return IMoocJSONResult.ok(videoComments);
     }
 
 
@@ -350,6 +423,98 @@ public class VideoController {
         return IMoocJSONResult.ok(videoId);
 
     }
+
+    @PostMapping("/getCodeImgPath")
+    public IMoocJSONResult getCodeImgPath (String accessToken) throws Exception {
+
+        System.out.println("token为");
+
+        System.out.println(accessToken);
+
+        /*Map<String, Object> params = new HashMap<>();
+
+        params.put("scene", "test");
+
+        params.put("page", "pages/index/index");
+
+        params.put("width", 430);*/
+
+
+
+        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
+        HttpPost httpPost = new HttpPost("https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token="+accessToken);
+        httpPost.addHeader(HTTP.CONTENT_TYPE, "application/json");
+
+        /*String body = JSON.toJSONString(params);
+
+        StringEntity entity = new StringEntity(body);
+
+        entity.setContentType("image/png");
+
+        httpPost.setEntity(entity);*/
+
+        HttpResponse response = httpClient.execute(httpPost);
+        InputStream inputStream = response.getEntity().getContent();
+
+
+
+        File targetFile = new File("F:\\");
+
+        if(!targetFile.exists()){
+
+            targetFile.mkdirs();
+
+        }
+
+        FileOutputStream out = new FileOutputStream("F:\\UploadFileServer\\File\\user\\code\\6.png");
+
+
+
+        byte[] buffer = new byte[8192];
+
+        int bytesRead = 0;
+
+        while((bytesRead = inputStream.read(buffer, 0, 8192)) != -1) {
+
+            out.write(buffer, 0, bytesRead);
+
+        }
+
+
+
+        out.flush();
+
+        out.close();
+
+        /*String wxUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=" + accessToken;
+        URL url = new URL(wxUrl);
+        HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+        httpURLConnection.setRequestMethod("POST");
+        httpURLConnection.setDoInput(true);
+        httpURLConnection.setDoOutput(true);
+        // 获取URLConnection对象对应的输出流
+        PrintWriter printWriter = new PrintWriter(httpURLConnection.getOutputStream());
+
+        //根据时间+随机数生成文件名
+        String newCodeImgName = IDUtils.genName();
+        String file_Upload_Path = "/code";
+
+
+            //把图片上传到ftp服务器（文件服务器）
+            //需要把ftp的参数配置到配置文件中
+            boolean upFileX = FtpUtil.uploadFile(FTP_ADDRESS, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, FTP_USER_PATH,
+                    file_Upload_Path, newCodeImgName + CLIPCOVERFILES_EXT, httpURLConnection.getInputStream());
+            if (!upFileX){
+                return IMoocJSONResult.errorMsg("文件上传中出错...");
+            }
+
+        String codeImgPath = file_Upload_Path + "/" + newCodeImgName + CLIPCOVERFILES_EXT;*/
+
+
+        return IMoocJSONResult.ok();
+    }
+
+
 
 
 }

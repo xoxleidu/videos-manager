@@ -92,7 +92,7 @@ public class UserController {
         return IMoocJSONResult.ok(facePathDB);
     }
 
-    @ApiOperation(value="查询用户信息", notes="用户信息的接口")
+    @ApiOperation(value="查询用户信息", notes="查询用户信息的接口")
     @ApiImplicitParams({
             @ApiImplicitParam(name="userId", value="用户id", required=true, dataType="String", paramType="query"),
             @ApiImplicitParam(name="fanId", value="查询用户是否关注", required=false, dataType="String", paramType="query"),
@@ -147,7 +147,7 @@ public class UserController {
         return IMoocJSONResult.ok(ulvResult);
     }
 
-	@ApiOperation(value="保存用户关注信息", notes="用户关注信息的接口")
+	@ApiOperation(value="保存用户关注信息", notes="保存用户关注信息的接口")
     @ApiImplicitParams({
             @ApiImplicitParam(name="userId", value="用户id", required=true, dataType="String", paramType="query"),
             @ApiImplicitParam(name="fanId", value="关注id", required=true, dataType="String", paramType="query"),
@@ -163,7 +163,7 @@ public class UserController {
         return IMoocJSONResult.ok("成功关注");
     }
 
-	@ApiOperation(value="取消用户关注信息", notes="用户关注信息的接口")
+	@ApiOperation(value="取消用户关注信息", notes="取消用户关注信息的接口")
     @ApiImplicitParams({
             @ApiImplicitParam(name="userId", value="用户id", required=true, dataType="String", paramType="query"),
             @ApiImplicitParam(name="fanId", value="关注id", required=true, dataType="String", paramType="query"),
