@@ -21,6 +21,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.Date;
 import java.util.HashMap;
@@ -424,94 +426,36 @@ public class VideoController {
 
     }
 
-    //@PostMapping("/getCodeImgPath")
-    public IMoocJSONResult getCodeImgPath (String accessToken) throws Exception {
+    @PostMapping("/getCodeImgPath")
+    public IMoocJSONResult getCodeImgPath (String accessToken, String scene, String path, int width) throws Exception {
 
-        System.out.println("token为");
+        /*System.out.println(accessToken);
+        System.out.println(scene);
+        System.out.println(path);
+        System.out.println(width);*/
 
-        System.out.println(accessToken);
-
-        /*Map<String, Object> params = new HashMap<>();
-
-        params.put("scene", "test");
-
-        params.put("page", "pages/index/index");
-
-        params.put("width", 430);*/
-
-
-
-        CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        HttpPost httpPost = new HttpPost("https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token="+accessToken);
-        httpPost.addHeader(HTTP.CONTENT_TYPE, "application/json");
-
-        /*String body = JSON.toJSONString(params);
-
-        StringEntity entity = new StringEntity(body);
-
-        entity.setContentType("image/png");
-
-        httpPost.setEntity(entity);*/
-
-        HttpResponse response = httpClient.execute(httpPost);
-        InputStream inputStream = response.getEntity().getContent();
-
-
-
-        File targetFile = new File("F:\\");
-
-        if(!targetFile.exists()){
-
-            targetFile.mkdirs();
-
-        }
-
-        FileOutputStream out = new FileOutputStream("F:\\UploadFileServer\\File\\user\\code\\6.png");
-
-
-
-        byte[] buffer = new byte[8192];
-
-        int bytesRead = 0;
-
-        while((bytesRead = inputStream.read(buffer, 0, 8192)) != -1) {
-
-            out.write(buffer, 0, bytesRead);
-
-        }
-
-
-
-        out.flush();
-
-        out.close();
-
-        /*String wxUrl = "https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=" + accessToken;
-        URL url = new URL(wxUrl);
-        HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-        httpURLConnection.setRequestMethod("POST");
-        httpURLConnection.setDoInput(true);
-        httpURLConnection.setDoOutput(true);
-        // 获取URLConnection对象对应的输出流
-        PrintWriter printWriter = new PrintWriter(httpURLConnection.getOutputStream());
+        InputStream codeStream = WxCodeImgUtil.getCodeStream(accessToken,scene,path,width);
 
         //根据时间+随机数生成文件名
         String newCodeImgName = IDUtils.genName();
         String file_Upload_Path = "/code";
+        //把图片上传到ftp服务器（文件服务器）
+        //需要把ftp的参数配置到配置文件中
+        FtpUtil.uploadFile(FTP_ADDRESS, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, FTP_USER_PATH,
+                file_Upload_Path, newCodeImgName + CLIPCOVERFILES_EXT, codeStream);
 
 
-            //把图片上传到ftp服务器（文件服务器）
-            //需要把ftp的参数配置到配置文件中
-            boolean upFileX = FtpUtil.uploadFile(FTP_ADDRESS, FTP_PORT, FTP_USERNAME, FTP_PASSWORD, FTP_USER_PATH,
-                    file_Upload_Path, newCodeImgName + CLIPCOVERFILES_EXT, httpURLConnection.getInputStream());
-            if (!upFileX){
-                return IMoocJSONResult.errorMsg("文件上传中出错...");
-            }
+        String codeImgName = newCodeImgName + CLIPCOVERFILES_EXT;
 
-        String codeImgPath = file_Upload_Path + "/" + newCodeImgName + CLIPCOVERFILES_EXT;*/
+        /*String fileServerPath = UPLOADFILES_ROOT_PATH + "/File/user" + file_Upload_Path + "/" + newCodeImgName + CLIPCOVERFILES_EXT;
+        String fileServerOutPath = UPLOADFILES_ROOT_PATH + "/File/user" + file_Upload_Path + "/180_" + newCodeImgName + CLIPCOVERFILES_EXT;
 
+        BufferedImage bufferedImage = ImgClipUtil.resize(ImageIO.read(new FileInputStream(fileServerPath)),180,180);;
 
-        return IMoocJSONResult.ok();
+        ImageIO.write(bufferedImage, "jpg", new File(fileServerOutPath));*/
+
+        return IMoocJSONResult.ok(codeImgName);
+
     }
 
 
