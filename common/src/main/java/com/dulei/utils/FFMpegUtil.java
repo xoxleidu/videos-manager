@@ -12,7 +12,7 @@ import java.util.List;
 public class FFMpegUtil {
 
     //Windows下 ffmpeg.exe的路径
-    private static String ffmpegEXE = "D:\\ffmpeg\\bin\\ffmpeg.exe";
+    private static String ffmpegEXE = "C:\\ffmpeg\\bin\\ffmpeg.exe";
 
     //Linux与mac下  ffmpeg的路径
     //private static String ffmpegEXE = "/developer/ffmpeg-4.0/bin/ffmpeg";

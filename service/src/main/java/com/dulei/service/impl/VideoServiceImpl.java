@@ -1,12 +1,15 @@
 package com.dulei.service.impl;
 
 import com.dulei.mapper.*;
+import com.dulei.pojo.Comments;
 import com.dulei.pojo.SearchRecords;
 import com.dulei.pojo.UsersLikeVideos;
 import com.dulei.pojo.Videos;
+import com.dulei.pojo.redis.CommentsVO;
 import com.dulei.pojo.redis.VideosVO;
 import com.dulei.service.VideoService;
 import com.dulei.utils.PagedResult;
+import com.dulei.utils.TimeAgoUtils;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import org.n3r.idworker.Sid;
@@ -24,13 +27,17 @@ public class VideoServiceImpl implements VideoService {
     @Autowired
     private VideosMapper videosMapper;
     @Autowired
-    private VideosMapperCustomMapper videosMapperCustomMapper;
+    private VideosCustomMapper videosCustomMapper;
     @Autowired
     private SearchRecordsMapper searchRecordsMapper;
     @Autowired
     private UsersMapper usersMapper;
     @Autowired
     private UsersLikeVideosMapper usersLikeVideosMapper;
+    @Autowired
+    private CommentsMapper commentsMapper;
+    @Autowired
+    private CommentsCustomMapper commentsCustomMapper;
     @Autowired
     private Sid sid;
 
@@ -48,7 +55,7 @@ public class VideoServiceImpl implements VideoService {
     public PagedResult getLikesVideosByDay(Integer page, Integer dayBy) {
 
         PageHelper.startPage(page,21);
-        List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideosByLikes(dayBy);
+        List<VideosVO> videosVOList = videosCustomMapper.queryAllVideosByLikes(dayBy);
 
         PageInfo pageInfoList = new PageInfo(videosVOList);
         PagedResult pagedResult = new PagedResult();
@@ -95,7 +102,7 @@ public class VideoServiceImpl implements VideoService {
         }
 
         PageHelper.startPage(page,pageSize);
-        List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideos(desc,userId);
+        List<VideosVO> videosVOList = videosCustomMapper.queryAllVideos(desc,userId);
 
         PageInfo pageInfoList = new PageInfo(videosVOList);
         PagedResult pagedResult = new PagedResult();
@@ -116,7 +123,7 @@ public class VideoServiceImpl implements VideoService {
     @Override
     public PagedResult getAllVideosByFollows(String userId, Integer page, Integer pageSize) {
         PageHelper.startPage(page,pageSize);
-        List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideosByFollows(userId);
+        List<VideosVO> videosVOList = videosCustomMapper.queryAllVideosByFollows(userId);
 
         PageInfo pageInfoList = new PageInfo(videosVOList);
         PagedResult pagedResult = new PagedResult();
@@ -131,7 +138,7 @@ public class VideoServiceImpl implements VideoService {
     @Override
     public PagedResult getAllVideosByLikes(String userId, Integer page, Integer pageSize) {
         PageHelper.startPage(page,pageSize);
-        List<VideosVO> videosVOList = videosMapperCustomMapper.queryAllVideosByLikes(userId);
+        List<VideosVO> videosVOList = videosCustomMapper.queryAllVideosByLikes(userId);
 
         PageInfo pageInfoList = new PageInfo(videosVOList);
         PagedResult pagedResult = new PagedResult();
@@ -158,7 +165,7 @@ public class VideoServiceImpl implements VideoService {
         // 1. 保存用户和视频的喜欢点赞关联关系表
         usersLikeVideosMapper.insert(ulv);
         // 2. 视频喜欢数量累加
-        videosMapperCustomMapper.addLikeCounts(videoId);
+        videosCustomMapper.addLikeCounts(videoId);
         // 3. 用户受喜欢数量的累加
         usersMapper.addReceiveLikeCounts(videoCreateId);
     }
@@ -172,8 +179,53 @@ public class VideoServiceImpl implements VideoService {
         criteria.andEqualTo("videoId",videoId);
 
         usersLikeVideosMapper.deleteByExample(example);
-        videosMapperCustomMapper.delLikeCounts(videoId);
+        videosCustomMapper.delLikeCounts(videoId);
         usersMapper.delReceiveLikeCounts(videoCreateId);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    @Override
+    public void saveComment(Comments comments) {
+        String id = sid.nextShort();
+        comments.setId(id);
+        commentsMapper.insert(comments);
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Override
+    public PagedResult getVideoComments(String videoId, Integer page, Integer pageSize) {
+        PageHelper.startPage(page,pageSize);
+        List<CommentsVO> commentsVOS = commentsCustomMapper.queryVideoComments(videoId);
+
+        for (CommentsVO c : commentsVOS) {
+            String timeAgo = TimeAgoUtils.format(c.getCreateTime());
+            c.setTimeAgoStr(timeAgo);
+        }
+
+        PageInfo pageInfoList = new PageInfo(commentsVOS);
+        PagedResult pagedResult = new PagedResult();
+        pagedResult.setPage(page);
+        pagedResult.setRecords(pageInfoList.getTotal());
+        pagedResult.setRows(commentsVOS);
+        pagedResult.setTotal(pageInfoList.getPages());
+
+        return pagedResult;
+    }
+
+    @Transactional(propagation = Propagation.SUPPORTS)
+    @Override
+    public PagedResult getVideoAllComments(String videoId) {
+        List<CommentsVO> commentsVOS = commentsCustomMapper.queryVideoComments(videoId);
+
+        for (CommentsVO c : commentsVOS) {
+            String timeAgo = TimeAgoUtils.format(c.getCreateTime());
+            c.setTimeAgoStr(timeAgo);
+        }
+
+        PagedResult pagedResult = new PagedResult();
+        pagedResult.setRows(commentsVOS);
+
+        return pagedResult;
     }
 
 

@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
-public interface VideosMapperCustomMapper extends MyMapper<Videos> {
+public interface VideosCustomMapper extends MyMapper<Videos> {
 
     /**
      * @Description: 查询所有视频or我发的视频(userId判断)or模糊查询所有视频(videoDesc判断)

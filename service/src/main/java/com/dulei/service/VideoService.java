@@ -1,5 +1,6 @@
 package com.dulei.service;
 
+import com.dulei.pojo.Comments;
 import com.dulei.pojo.Videos;
 import com.dulei.utils.PagedResult;
 
@@ -60,6 +61,26 @@ public interface VideoService {
      */
     public void userUnLikeVideo(String userId, String videoId, String videoCreateId);
 
+    /**
+     * 保存留言
+     * @param comments
+     */
+    public void saveComment(Comments comments);
 
+    /**
+     * 获取该视频留言
+     * @param videoId 视频ID
+     * @param page 当前页
+     * @param pageSize 页数
+     * @return
+     */
+    public PagedResult getVideoComments(String videoId, Integer page, Integer pageSize);
+
+    /**
+     * 获取该视频所有留言
+     * @param videoId 视频ID
+     * @return
+     */
+    public PagedResult getVideoAllComments(String videoId);
 
 }
