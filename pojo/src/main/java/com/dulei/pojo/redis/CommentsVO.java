@@ -21,9 +21,18 @@ public class CommentsVO {
     private String comment;
 
     private String faceImage;
+    private String tofaceImage;
     private String nickname;
     private String toNickname;
     private String timeAgoStr;
+
+    public String getTofaceImage() {
+        return tofaceImage;
+    }
+
+    public void setTofaceImage(String tofaceImage) {
+        this.tofaceImage = tofaceImage;
+    }
 
     public String getFatherCommentId() {
         return fatherCommentId;

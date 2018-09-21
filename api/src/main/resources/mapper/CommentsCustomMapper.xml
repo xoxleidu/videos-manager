@@ -12,10 +12,12 @@
     <result column="from_user_id" jdbcType="VARCHAR" property="fromUserId" />
     <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
     <result column="comment" jdbcType="LONGVARCHAR" property="comment" />
+    <result column="nickname" jdbcType="VARCHAR" property="nickname" />
+    <result column="face_image" jdbcType="VARCHAR" property="faceImage" />
   </resultMap>
 
   <select id="queryVideoComments" resultMap="BaseResultMap" parameterType="String">
-	select c.*,u.face_image as face_image,u.nickname,tu.nickname as toNickname
+	select c.*,u.face_image,tu.face_image as tofaceImage,u.nickname,tu.nickname as toNickname
 	from comments c
 	left join users u on c.from_user_id = u.id
 	left join users tu on c.to_user_id = tu.id
